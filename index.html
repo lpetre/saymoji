@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags always come first -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!--   <meta http-equiv="x-ua-compatible" content="ie=edge">
+ -->  <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.min.css"></link>
+  <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css"></link>
+  <style>
+  /* Space out content a bit */
+  body {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  /* Everything but the jumbotron gets side spacing for mobile first views */
+  .header,
+  .marketing,
+  .footer {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+  /* Custom page header */
+  .header {
+    padding-bottom: 1rem;
+    border-bottom: .05rem solid #e5e5e5;
+  }
+  /* Make the masthead heading the same height as the navigation */
+  .header h3 {
+    margin-top: 0;
+    margin-bottom: 0;
+    line-height: 3rem;
+  }
+  /* Custom page footer */
+  .footer {
+    padding-top: 1.5rem;
+    border-top: .05rem solid #e5e5e5;
+    text-align: center;
+  }
+  /* Customize container */
+  @media (min-width: 48em) {
+    .container {
+      max-width: 46rem;
+    }
+  }
+  .container-narrow > hr {
+    margin: 2rem 0;
+  }
+  /* Main marketing message and sign up button */
+  .jumbotron {
+    text-align: center;
+    border-bottom: .05rem solid #e5e5e5;
+  }
+  /* Supporting marketing content */
+  .marketing {
+    margin: 3rem 0;
+  }
+  .marketing p + h4 {
+    margin-top: 1.5rem;
+  }
+  .results {
+    min-height: 38px;
+  }
+  /* emoji nodes */
+  .emoji {
+    font-weight: normal;
+    font-family: AppleColorEmoji;
+    letter-spacing: 0.1em;
+  }
+  /* Responsive: Portrait tablets and up */
+  @media screen and (min-width: 48em) {
+    /* Remove the padding we set earlier */
+    .header,
+    .marketing,
+    .footer {
+      padding-right: 0;
+      padding-left: 0;
+    }
+    /* Space out the masthead */
+    .header {
+      margin-bottom: 2rem;
+    }
+    /* Remove the bottom border on the jumbotron for visual effect */
+    .jumbotron {
+      border-bottom: 0;
+    }
+  }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="jumbotron">
+      <h3>
+        #saymoji
+        <small class="text-muted"> - say something, see something!</small>
+      </h3>
+      <form id="translate_form">
+        <fieldset class="form-group">
+          <div class="input-group">
+            <span class="input-group-btn">
+              <button class="btn btn-success" id="start_button" onclick="startButton(event)">
+                <i id="start_icon" class="fa fa-microphone"></i>
+                <i id="stop_icon" style="display: none;" class="fa fa-microphone-slash"></i>
+              </button>
+            </span>
+            <input type="text" class="form-control" id="final_text" disabled placeholder="Click on the microphone..."></input>
+          </div>
+        </fieldset>
+        <fieldset class="form-group">
+          <div class="input-group">
+            <span id="final_emoji" class="results form-control"></span>
+            <span class="input-group-btn">
+              <button class="btn btn-default" onclick="copyButton(event)">
+                <i class="fa fa-clipboard"></i>
+              </button>
+            </span>
+          </div>
+        </fieldset>
+      </form>
+      <div id="info" style="display:none">
+        <p id="info_start">
+          Click on the microphone icon and begin speaking for as long as you like.
+        </p>
+        <p id="info_speak_now" style="display:none">
+          Speak now.
+        </p>
+        <p id="info_no_speech" style="display:none">
+          No speech was detected. You may need to adjust your <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">microphone
+            settings</a>.
+        </p>
+        <p id="info_no_microphone" style="display:none">
+          No microphone was found. Ensure that a microphone is installed and that
+          <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
+            microphone settings</a> are configured correctly.
+        </p>
+        <p id="info_allow" style="display:none">
+          Click the "Allow" button above to enable your microphone.
+        </p>
+        <p id="info_denied" style="display:none">
+          Permission to use microphone was denied.
+        </p>
+        <p id="info_blocked" style="display:none">
+          Permission to use microphone is blocked. To change, go to chrome://settings/contentExceptions#media-stream
+        </p>
+        <p id="info_upgrade" style="display:none">
+          Web Speech API is not supported by this browser. Upgrade to <a href="//www.google.com/chrome">Chrome</a> version 25 or later.
+        </p>
+      </div>
+      <form class="form-inline">
+        <div class="form-group">
+          <label for="select_language">Select language:</label>
+          <select class="form-control" id="select_language" onchange="updateCountry()">
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="select_dialect">Select dialect:</label>
+          <select class="form-control" id="select_dialect">
+          </select>
+        </div>
+    </div>
+    <div class="footer">
+        <p>made with <span class="emoji">😄</span> by <a href="https://twitter.com/luke_duke">luke</a>.
+        find this on <a href="https://github.com/lpetre/saymoji">github</a></p>
+    </div>
+  </div>
+  <script>
+  var langs = [
+    ['English', ['en-AU', 'Australia'],
+      ['en-CA', 'Canada'],
+      ['en-IN', 'India'],
+      ['en-NZ', 'New Zealand'],
+      ['en-ZA', 'South Africa'],
+      ['en-GB', 'United Kingdom'],
+      ['en-US', 'United States']
+    ]
+  ];
+
+  for (var i = 0; i < langs.length; i++) {
+    select_language.options[i] = new Option(langs[i][0], i);
+  }
+  select_language.selectedIndex = 0;
+  updateCountry();
+  select_dialect.selectedIndex = 6;
+  showInfo('info_start');
+
+  translate_form.onsubmit = function(event) {
+    event.preventDefault();
+    return false;
+  };
+
+  function updateCountry() {
+    for (var i = select_dialect.options.length - 1; i >= 0; i--) {
+      select_dialect.remove(i);
+    }
+    var list = langs[select_language.selectedIndex];
+    for (var i = 1; i < list.length; i++) {
+      select_dialect.options.add(new Option(list[i][1], list[i][0]));
+    }
+    select_dialect.style.visibility = list[1].length == 1 ? 'hidden' : 'visible';
+  }
+
+  var final_transcript = '';
+  var recognizing = false;
+  var ignore_onend;
+  var start_timestamp;
+  if (!('webkitSpeechRecognition' in window)) {
+    upgrade();
+  } else {
+    var recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = function() {
+      recognizing = true;
+      showInfo('info_speak_now');
+      //start_img.src = '/intl/en/chrome/assets/common/images/content/mic-animate.gif';
+    };
+
+    recognition.onerror = function(event) {
+      if (event.error == 'no-speech') {
+        showMic(false);
+        showInfo('info_no_speech');
+        ignore_onend = true;
+      }
+      if (event.error == 'audio-capture') {
+        showMic(false);
+        showInfo('info_no_microphone');
+        ignore_onend = true;
+      }
+      if (event.error == 'not-allowed') {
+        if (event.timeStamp - start_timestamp < 100) {
+          showInfo('info_blocked');
+        } else {
+          showInfo('info_denied');
+        }
+        ignore_onend = true;
+      }
+    };
+
+    recognition.onend = function() {
+      recognizing = false;
+      if (ignore_onend) {
+        return;
+      }
+      showMic(false);
+      if (!final_transcript) {
+        showInfo('info_start');
+        return;
+      }
+      showInfo('');
+    };
+
+    recognition.onresult = function(event) {
+      var interim_transcript = '';
+      if (typeof(event.results) == 'undefined') {
+        recognition.onend = null;
+        recognition.stop();
+        upgrade();
+        return;
+      }
+      for (var i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          final_transcript += event.results[i][0].transcript;
+        } else {
+          interim_transcript += event.results[i][0].transcript;
+        }
+      }
+      var text = capitalize(final_transcript + interim_transcript);
+      final_text.value = linebreak(text);
+      final_emoji.innerHTML = '';
+      final_emoji.appendChild(translateInputChunk(text))
+    };
+  }
+
+  start_button.disabled = true;
+  document.addEventListener('emoji-ready', function() {
+    start_button.disabled = false;
+  });
+
+  function translateInputChunk(text) {
+    var container = document.createElement('span');
+    var allLines = text.split('\n');
+    for (var line = 0; line < allLines.length; line++) {
+      if (allLines[line] == '')
+        continue
+      var words = allLines[line].split(' ');
+      // Re-add the translated words.
+      for (var i = 0; i < words.length; i++) {
+        container.appendChild(translateWord(words[i]));
+      }
+      var newLine = document.createElement('br');
+      container.appendChild(newLine);
+    }
+    return container;
+  }
+
+  function upgrade() {
+    start_button.style.visibility = 'hidden';
+    showInfo('info_upgrade');
+  }
+
+  var two_line = /\n\n/g;
+  var one_line = /\n/g;
+
+  function linebreak(s) {
+    return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
+  }
+
+  var first_char = /\S/;
+
+  function capitalize(s) {
+    return s.replace(first_char, function(m) {
+      return m.toUpperCase();
+    });
+  }
+
+  function startButton(event) {
+    if (recognizing) {
+      recognition.stop();
+      return;
+    }
+    final_transcript = '';
+    recognition.lang = select_dialect.value;
+    recognition.start();
+    ignore_onend = false;
+    final_text.innerHTML = '';
+    showMic(true);
+    showInfo('info_allow');
+    start_timestamp = event.timeStamp;
+  }
+
+  function copyButton(event) {
+    if (window.getSelection) {
+      window.getSelection().removeAllRanges();
+      var range = document.createRange();
+      range.selectNode(document.getElementById('final_emoji'));
+      window.getSelection().addRange(range);
+    }
+
+    try {
+      document.execCommand('copy');
+    } catch(err) {
+    }
+
+    // Remove the selections - NOTE: Should use
+    // removeRange(range) when it is supported
+    window.getSelection().removeAllRanges();
+  }
+
+  function showInfo(s) {
+    if (s) {
+      for (var child = info.firstChild; child; child = child.nextSibling) {
+        if (child.style) {
+          child.style.display = child.id == s ? 'inline' : 'none';
+        }
+      }
+      info.style.visibility = 'visible';
+    } else {
+      info.style.visibility = 'hidden';
+    }
+  }
+
+  function showMic(r) {
+    start_icon.style.display = r ? 'none' : 'inline';
+    stop_icon.style.display = r ? 'inline' : 'none';
+    start_button.className = "btn " + (r ? "btn-danger" : "btn-success");
+  }
+  </script>
+  <script>
+  var allEmojis;
+  var SYMBOLS = '!"#$%&\'()*+,-./:;<=>?@[]^_`{|}~';
+
+  /**
+   * Fires an emoji:ready event when the list of emojis has been loaded.
+   *
+   * @event emoji-ready
+   */
+  (function() {
+    var request = new XMLHttpRequest();
+    request.open('GET', 'https://cdn.rawgit.com/muan/emojilib/1.1.0/emojis.json', true);
+    request.onload = function() {
+      if (request.status >= 200 && request.status < 400) {
+        allEmojis = JSON.parse(request.response);
+        var event = document.createEvent('HTMLEvents');
+        event.initEvent('emoji-ready', true, false);
+        document.dispatchEvent(event);
+      }
+    };
+    request.send();
+  })();
+
+  /**
+   * Returns a possibly translated english word to emoji, ready for display.
+   * @param {String} word The word to be translated
+   * @returns {HTMLElement} A <span> element containing the translated word.
+   */
+  function translateWord(word) {
+    var node = document.createElement('span');
+
+    // Punctuation blows. Get all the punctuation at the start and end of the word.
+    var firstSymbol = '';
+    var lastSymbol = '';
+
+    while (SYMBOLS.indexOf(word[0]) != -1) {
+      firstSymbol += word[0];
+      word = word.slice(1, word.length);
+    }
+
+    while (SYMBOLS.indexOf(word[word.length - 1]) != -1) {
+      lastSymbol += word[word.length - 1];
+      word = word.slice(0, word.length - 1);
+    }
+
+    var emoji = getMeAnEmoji(word);
+    if (emoji != '') {
+      node.title = word;
+      node.className = "emoji"
+      node.innerHTML = emoji;
+    } else {
+      node.innerHTML = word;
+    }
+
+    // Reapply the punctuation.
+    node.innerHTML = firstSymbol + node.innerHTML + lastSymbol + ' ';
+    return node;
+  }
+
+  /**
+   * Returns the emoji equivalent of an english word.
+   * @param {String} word The word to be translated
+   * @returns {String} The emoji character representing this word, or '' if one doesn't exist.
+   */
+  function getMeAnEmoji(word) {
+    word = word.trim().toLowerCase();
+
+    if (!word || word === '' || word === 'it' || word.length < 3)
+      return '';
+
+    // Maybe this is a plural word but the word is the singular?
+    // Don't do it for two letter words since "as" would become "a" etc.
+    var maybeSingular = '';
+    if (word.length > 2 && word[word.length - 1] == 's')
+      maybeSingular = word.slice(0, word.length - 1);
+
+    // Maybe this is a singular word but the word is the plural?
+    // Don't do this for single letter since that will pluralize crazy things.
+    var maybePlural = (word.length == 1) ? '' : word + 's';
+
+    // Go through all the things and find the first one that matches.
+    for (var emoji in allEmojis) {
+      var words = allEmojis[emoji].keywords;
+      if (emoji == word || emoji == maybeSingular || emoji == maybePlural ||
+        (words && words.indexOf(word) >= 0) ||
+        (words && words.indexOf(maybeSingular) >= 0) ||
+        (words && words.indexOf(maybePlural) >= 0))
+        return allEmojis[emoji].char;
+    }
+    return '';
+  };
+  </script>
+  <!--   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/js/bootstrap.min.js"></script> -->
+</body>
+
+</html>
