@@ -299,9 +299,17 @@
       for (var i = 0; i < words.length; i++) {
         container.appendChild(translateWord(words[i]));
       }
-      var newLine = document.createElement('br');
-      container.appendChild(newLine);
     }
+
+    var tag = document.createElement('span');
+    tag.innerHTML = ' #saymoji';
+    tag.style.position = "absolute";
+    tag.style.left = "-1000px";
+    tag.style.top = "-1000px";
+
+    container.appendChild(tag);
+
+
     return container;
   }
 
